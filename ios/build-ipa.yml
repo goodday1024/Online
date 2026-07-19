@@ -1,0 +1,64 @@
+# ============================================================
+#  未签名 IPA 构建工作流
+#  当前令牌缺少 workflow 权限,请将此文件移动到:
+#      .github/workflows/build-ipa.yml
+#  (GitHub 网页上点 Edit → 重命名路径即可),随后 push 或
+#  在 Actions 页手动触发 "Build Unsigned IPA"。
+# ============================================================
+name: Build Unsigned IPA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/build-ipa.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build (no code signing)
+        working-directory: ios
+        run: |
+          xcodebuild \
+            -project Online.xcodeproj \
+            -scheme Online \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -derivedDataPath build \
+            build
+
+      - name: Package unsigned IPA
+        working-directory: ios
+        run: |
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "Online.app" -maxdepth 1)
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -qr Online-unsigned.ipa Payload
+          ls -lh Online-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Online-unsigned-ipa
+          path: ios/Online-unsigned.ipa
+          retention-days: 30
