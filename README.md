@@ -19,12 +19,14 @@
 ```
 web/                Web 版(React + TypeScript + Vite + Tailwind,完整可交互原型)
 ios/                iOS 工程(SwiftUI 骨架,XcodeGen 生成)
-.github/workflows/  GitHub Actions:自动构建未签名 IPA
+ios/build-ipa.yml   未签名 IPA 构建工作流(启用方式见下)
 ```
 
 ## 构建未签名 IPA
 
-push 到 `main` 或在 Actions 页手动触发 **Build Unsigned IPA**:
+工作流文件已就绪,位于 `ios/build-ipa.yml`。**启用只需一步**:在 GitHub 网页上编辑该文件,把路径重命名为 `.github/workflows/build-ipa.yml` 并提交(仓库令牌无 workflow 写入权限,需在网页端操作一次)。
+
+启用后,push 涉及 `ios/**` 的改动或在 Actions 页手动触发 **Build Unsigned IPA**:
 
 1. `macos-15` runner + XcodeGen 生成工程
 2. `xcodebuild` 以 `CODE_SIGNING_ALLOWED=NO` 编译 Release
